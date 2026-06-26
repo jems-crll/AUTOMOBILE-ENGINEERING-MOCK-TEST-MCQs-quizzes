@@ -235,12 +235,13 @@ export default function RazorpayModal({
 
     try {
       const checkRes = await fetch(`/api/razorpay/check-verification?email=${encodeURIComponent(currentUser.email)}`);
+      if (!checkRes.ok) throw new Error("Could not reach verification service.");
       const checkData = await checkRes.json();
 
       if (checkData.verified) {
         setPaymentSuccess(true);
       } else {
-        await fetch("/api/razorpay/admin-verify", {
+        const verifyRes = await fetch("/api/razorpay/admin-verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -248,6 +249,7 @@ export default function RazorpayModal({
             paymentId: trimmedTxn
           })
         });
+        if (!verifyRes.ok) throw new Error("Failed to submit verification request.");
         setPaymentSuccess(true);
       }
 
@@ -284,9 +286,11 @@ export default function RazorpayModal({
         onClose();
       }, 2500);
 
-    } catch (e) {
-      console.error(e);
-      setTxnError("Verification service temporarily offline. Please try again.");
+    } catch (e: any) {
+      console.error("Payment verification error:", e);
+      setTxnError(isMarathi 
+        ? `पडताळणी दरम्यान त्रुटी आली: ${e.message || "कृपया पुन्हा प्रयत्न करा."}` 
+        : `Verification error: ${e.message || "Please try again."}`);
     } finally {
       setIsProcessing(false);
     }
