@@ -417,6 +417,7 @@ Output JSON format:
 
   // 3. Query payment verification status
   app.get("/api/razorpay/check-verification", (req, res) => {
+    console.log("API check-verification hit:", req.url);
     const email = (req.query.email as string || "").toLowerCase().trim();
     if (!email) {
       return res.status(400).json({ error: "Email parameter is required" });

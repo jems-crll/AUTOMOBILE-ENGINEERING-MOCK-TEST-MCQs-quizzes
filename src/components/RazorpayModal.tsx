@@ -234,14 +234,18 @@ export default function RazorpayModal({
     setIsProcessing(true);
 
     try {
-      const checkRes = await fetch(`/api/razorpay/check-verification?email=${encodeURIComponent(currentUser.email)}`);
-      if (!checkRes.ok) throw new Error("Could not reach verification service.");
+      console.log("Fetching verification status for:", currentUser.email);
+      const url = `${window.location.origin}/api/razorpay/check-verification?email=${encodeURIComponent(currentUser.email)}`;
+      console.log("Fetching from URL:", url);
+      const checkRes = await fetch(url);
+      console.log("Check verification response:", checkRes.status, checkRes.statusText);
+      if (!checkRes.ok) throw new Error(`Could not reach verification service: ${checkRes.status} ${checkRes.statusText}`);
       const checkData = await checkRes.json();
 
       if (checkData.verified) {
         setPaymentSuccess(true);
       } else {
-        const verifyRes = await fetch("/api/razorpay/admin-verify", {
+        const verifyRes = await fetch(`${window.location.origin}/api/razorpay/admin-verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
