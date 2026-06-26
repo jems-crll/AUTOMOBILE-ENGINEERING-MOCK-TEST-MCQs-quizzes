@@ -235,7 +235,7 @@ export default function RazorpayModal({
 
     try {
       console.log("Fetching verification status for:", currentUser.email);
-      const url = `${window.location.origin}/api/razorpay/check-verification?email=${encodeURIComponent(currentUser.email)}`;
+      const url = `/api/razorpay/check-verification?email=${encodeURIComponent(currentUser.email)}`;
       console.log("Fetching from URL:", url);
       const checkRes = await fetch(url);
       console.log("Check verification response:", checkRes.status, checkRes.statusText);
@@ -245,7 +245,7 @@ export default function RazorpayModal({
       if (checkData.verified) {
         setPaymentSuccess(true);
       } else {
-        const verifyRes = await fetch(`${window.location.origin}/api/razorpay/admin-verify`, {
+        const verifyRes = await fetch("/api/razorpay/admin-verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
