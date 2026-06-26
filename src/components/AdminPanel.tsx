@@ -22,8 +22,15 @@ export default function AdminPanel({ selectedLanguage, onClose }: AdminPanelProp
   const isMarathi = selectedLanguage.code === "mr";
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"list" | "guide">("list");
+  const [activeTab, setActiveTab] = useState<"list" | "guide" | "plans" | "settings">("list");
   const [guideSubTab, setGuideSubTab] = useState<"firebase" | "sheets" | "sql">("firebase");
+  
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [adminSettings, setAdminSettings] = useState({
+    secretAdminPass: "9988",
+    bypassPass1: "OMTOADMIN",
+    bypassPass2: "BYPASS2026"
+  });
 
   // Form states for adding a student
   const [newEmail, setNewEmail] = useState("");
@@ -41,7 +48,41 @@ export default function AdminPanel({ selectedLanguage, onClose }: AdminPanelProp
   // Load students from omto_users_db on mount
   useEffect(() => {
     loadStudents();
+    loadPlans();
+    loadSettings();
   }, []);
+
+  const loadSettings = () => {
+    const stored = localStorage.getItem("omto_admin_settings");
+    if (stored) {
+      setAdminSettings(JSON.parse(stored));
+    }
+  };
+
+  const saveSettings = (newSettings: typeof adminSettings) => {
+    setAdminSettings(newSettings);
+    localStorage.setItem("omto_admin_settings", JSON.stringify(newSettings));
+  };
+
+  const loadPlans = () => {
+    const storedPlans = localStorage.getItem("omto_subscription_plans");
+    if (storedPlans) {
+      setPlans(JSON.parse(storedPlans));
+    } else {
+      const defaults: SubscriptionPlan[] = [
+        { id: "1", name: "1 Month", price: 100, durationMonths: 1 },
+        { id: "2", name: "2 Months", price: 200, durationMonths: 2 },
+        { id: "3", name: "4 Months", price: 300, durationMonths: 4 }
+      ];
+      setPlans(defaults);
+      localStorage.setItem("omto_subscription_plans", JSON.stringify(defaults));
+    }
+  };
+
+  const savePlans = (newPlans: SubscriptionPlan[]) => {
+    setPlans(newPlans);
+    localStorage.setItem("omto_subscription_plans", JSON.stringify(newPlans));
+  };
 
   const loadStudents = () => {
     try {
@@ -215,6 +256,28 @@ export default function AdminPanel({ selectedLanguage, onClose }: AdminPanelProp
           >
             <Icons.DatabaseBackup className="h-3.5 w-3.5" />
             <span>{isMarathi ? "डेटाबेस कनेक्ट मार्गदर्शक" : "Connect Real Database"}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("plans")}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "plans" 
+                ? "bg-amber-500 text-slate-950" 
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Icons.CreditCard className="h-3.5 w-3.5" />
+            <span>{isMarathi ? "प्लॅन व्यवस्थापन" : "Manage Plans"}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "settings" 
+                ? "bg-amber-500 text-slate-950" 
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Icons.Settings className="h-3.5 w-3.5" />
+            <span>{isMarathi ? "सेटिंग्ज" : "Settings"}</span>
           </button>
         </div>
       </div>
@@ -473,6 +536,87 @@ export default function AdminPanel({ selectedLanguage, onClose }: AdminPanelProp
                   : "This panel connects directly to the local users database on this browser session. Activating or canceling subscriptions dynamically blocks or unlocks mock tests for that student immediately."}
               </p>
             </div>
+          </div>
+        </div>
+      ) : activeTab === "settings" ? (
+        <div className="bg-slate-950 border border-slate-850 rounded-2xl p-6 space-y-6">
+          <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-850 pb-3">
+            <Icons.Settings className="h-4 w-4 text-amber-500" />
+            <span>{isMarathi ? "सिस्टम सेटिंग्ज" : "System Settings"}</span>
+          </h3>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{isMarathi ? "गुप्त ॲडमीन पासवर्ड" : "Secret Admin Password"}</label>
+              <input 
+                value={adminSettings.secretAdminPass} 
+                onChange={(e) => saveSettings({...adminSettings, secretAdminPass: e.target.value})}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{isMarathi ? "बायपास पासवर्ड १" : "Bypass Password 1"}</label>
+              <input 
+                value={adminSettings.bypassPass1} 
+                onChange={(e) => saveSettings({...adminSettings, bypassPass1: e.target.value})}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{isMarathi ? "बायपास पासवर्ड २" : "Bypass Password 2"}</label>
+              <input 
+                value={adminSettings.bypassPass2} 
+                onChange={(e) => saveSettings({...adminSettings, bypassPass2: e.target.value})}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white"
+              />
+            </div>
+          </div>
+        </div>
+      ) : activeTab === "plans" ? (
+        <div className="bg-slate-950 border border-slate-850 rounded-2xl p-6 space-y-6">
+          <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-850 pb-3">
+            <Icons.Settings className="h-4 w-4 text-amber-500" />
+            <span>{isMarathi ? "सबस्क्रिप्शन प्लॅन्स" : "Subscription Plans"}</span>
+          </h3>
+          <div className="space-y-4">
+            {plans.map((plan) => (
+              <div key={plan.id} className="flex items-center justify-between p-4 bg-slate-900 border border-slate-800 rounded-xl">
+                <div>
+                  <p className="font-bold text-slate-100">{plan.name}</p>
+                  <p className="text-xs text-slate-400">₹{plan.price} / {plan.durationMonths} {isMarathi ? "महिने" : "Months"}</p>
+                </div>
+                <button
+                   onClick={() => {
+                     const newPlans = plans.filter(p => p.id !== plan.id);
+                     savePlans(newPlans);
+                   }}
+                   className="text-red-400 hover:text-red-300"
+                >
+                  <Icons.Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const newPlan: SubscriptionPlan = {
+                  id: Date.now().toString(),
+                  name: formData.get("name") as string,
+                  price: Number(formData.get("price")),
+                  durationMonths: Number(formData.get("duration")),
+                };
+                savePlans([...plans, newPlan]);
+                e.currentTarget.reset();
+              }}
+              className="flex gap-2 p-4 bg-slate-900 border border-slate-800 rounded-xl"
+            >
+              <input name="name" placeholder={isMarathi ? "प्लॅनचे नाव" : "Plan Name"} className="bg-slate-950 border border-slate-800 text-xs rounded-lg p-2 text-white w-full" required />
+              <input name="price" type="number" placeholder={isMarathi ? "किंमत (₹)" : "Price (₹)"} className="bg-slate-950 border border-slate-800 text-xs rounded-lg p-2 text-white w-20" required />
+              <input name="duration" type="number" placeholder={isMarathi ? "महिने" : "Months"} className="bg-slate-950 border border-slate-800 text-xs rounded-lg p-2 text-white w-20" required />
+              <button type="submit" className="bg-emerald-500 text-slate-950 px-3 rounded-lg text-xs font-bold">
+                <Icons.Plus className="h-4 w-4" />
+              </button>
+            </form>
           </div>
         </div>
       ) : (

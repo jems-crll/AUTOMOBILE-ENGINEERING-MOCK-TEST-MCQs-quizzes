@@ -67,3 +67,10 @@ export interface ChapterStats {
   averageScore: number;
   highestScore: number;
 }
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  durationMonths: number;
+}

@@ -26,8 +26,9 @@ export default function Auth({ onLoginSuccess, selectedLanguage }: AuthProps) {
     const nextClicks = logoClicks + 1;
     if (nextClicks >= 5) {
       setLogoClicks(0);
-      const secretPassword = prompt(isMarathi ? "कृपया गुप्त ॲडमीन पासवर्ड प्रविष्ट करा (उदा. 9988):" : "Enter secret admin password (e.g., 9988):");
-      if (secretPassword === "9988") {
+      const settings = getAdminSettings();
+      const secretPassword = prompt(isMarathi ? "कृपया गुप्त ॲडमीन पासवर्ड प्रविष्ट करा:" : "Enter secret admin password:");
+      if (secretPassword === settings.secretAdminPass) {
         const adminUser: User = {
           email: "admin@omto.com",
           username: "Admin",
@@ -69,6 +70,23 @@ export default function Auth({ onLoginSuccess, selectedLanguage }: AuthProps) {
     }
   };
 
+  const getAdminSettings = () => {
+    try {
+      const stored = localStorage.getItem("omto_admin_settings");
+      return stored ? JSON.parse(stored) : {
+        secretAdminPass: "9988",
+        bypassPass1: "OMTOADMIN",
+        bypassPass2: "BYPASS2026"
+      };
+    } catch (_) {
+      return {
+        secretAdminPass: "9988",
+        bypassPass1: "OMTOADMIN",
+        bypassPass2: "BYPASS2026"
+      };
+    }
+  };
+
   const saveUsersDb = (db: Record<string, any>) => {
     localStorage.setItem("omto_users_db", JSON.stringify(db));
   };
@@ -87,8 +105,9 @@ export default function Auth({ onLoginSuccess, selectedLanguage }: AuthProps) {
     const db = getRegisteredUsers();
 
     if (authMode === "login") {
+      const settings = getAdminSettings();
       // Admin bypass quick trigger
-      if (password === "OMTOADMIN" || password === "BYPASS2026") {
+      if (password === settings.bypassPass1 || password === settings.bypassPass2) {
         const adminUser: User = {
           email: emailKey.includes("@") ? emailKey : `${emailKey}@omto.com`,
           username: emailKey,

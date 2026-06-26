@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import * as Icons from "lucide-react";
-import { User, StateLanguage } from "../types";
+import { User, StateLanguage, SubscriptionPlan } from "../types";
 
 interface RazorpayModalProps {
   isOpen: boolean;
@@ -20,6 +20,25 @@ export default function RazorpayModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("omto_subscription_plans");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setPlans(parsed);
+      setSelectedPlan(parsed[0]);
+    } else {
+      const defaults: SubscriptionPlan[] = [
+        { id: "1", name: "1 Month", price: 100, durationMonths: 1 },
+        { id: "2", name: "2 Months", price: 200, durationMonths: 2 },
+        { id: "3", name: "4 Months", price: 300, durationMonths: 4 }
+      ];
+      setPlans(defaults);
+      setSelectedPlan(defaults[0]);
+    }
+  }, []);
 
   // Form input states
   const [txnId, setTxnId] = useState("");
@@ -33,16 +52,22 @@ export default function RazorpayModal({
   const handleOpenPaymentLink = async () => {
     setIsProcessing(true);
     setTxnError("");
+    if (!selectedPlan) {
+      setTxnError(isMarathi ? "कृपया एक प्लॅन निवडा." : "Please select a plan.");
+      setIsProcessing(false);
+      return;
+    }
     try {
       const res = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: 29900, // INR 299 in paise
+          amount: selectedPlan.price * 100, // INR in paise
           currency: "INR",
           notes: {
             email: currentUser.email,
-            document_id: currentUser.email
+            document_id: currentUser.email,
+            plan_id: selectedPlan.id
           }
         })
       });
@@ -96,6 +121,12 @@ export default function RazorpayModal({
                   db[emailKey].isPremium = true;
                   db[emailKey].paymentTxnId = response.razorpay_payment_id;
                   db[emailKey].paymentDate = new Date().toISOString();
+                  
+                  // Calculate new expiry date
+                  const expiryDate = new Date();
+                  expiryDate.setMonth(expiryDate.getMonth() + (selectedPlan?.durationMonths || 1));
+                  db[emailKey].expiryDate = expiryDate.toISOString().split("T")[0];
+                  
                   localStorage.setItem("omto_users_db", JSON.stringify(db));
                 }
               }
@@ -229,6 +260,12 @@ export default function RazorpayModal({
             db[emailKey].isPremium = true;
             db[emailKey].paymentTxnId = trimmedTxn;
             db[emailKey].paymentDate = new Date().toISOString();
+            
+            // Calculate new expiry date
+            const expiryDate = new Date();
+            expiryDate.setMonth(expiryDate.getMonth() + (selectedPlan?.durationMonths || 1));
+            db[emailKey].expiryDate = expiryDate.toISOString().split("T")[0];
+            
             localStorage.setItem("omto_users_db", JSON.stringify(db));
           }
         }
@@ -300,38 +337,39 @@ export default function RazorpayModal({
           <div className="space-y-4">
             
             {/* Package details */}
-            <div className="p-4 bg-slate-950 border border-slate-850 rounded-2xl flex flex-col gap-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider font-mono">
-                    LIFETIME ACCESS
-                  </span>
-                  <h4 className="font-black text-slate-100 text-base mt-2 font-sans leading-tight">
-                    {isMarathi ? "ऑटोमोबाईल इंजिनिअरिंग प्रीमियम" : "Automobile Engg. Premium Pack"}
-                  </h4>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {isMarathi 
-                      ? "सर्व धड्यांचे सराव संच, उत्तरे, प्रगत मॉक टेस्ट आणि सविस्तर स्पष्टीकरणांसह" 
-                      : "Full access to all chapters, practice sets, answers & detailed explanations"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-slate-500 line-through">₹999</div>
-                  <div className="text-xl font-black text-white">₹299</div>
-                  <div className="text-[10px] text-emerald-400 font-bold">{isMarathi ? "७०% सूट" : "70% OFF"}</div>
-                </div>
-              </div>
+            <div className="space-y-3">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                {isMarathi ? "प्लॅन निवडा" : "Select Subscription Plan"}
+              </p>
+              {plans.map((plan) => (
+                <button
+                  key={plan.id}
+                  onClick={() => setSelectedPlan(plan)}
+                  className={`w-full p-4 border rounded-2xl flex justify-between items-center transition ${
+                    selectedPlan?.id === plan.id
+                      ? "bg-amber-500/10 border-amber-500"
+                      : "bg-slate-950 border-slate-850 hover:border-slate-700"
+                  }`}
+                >
+                  <div>
+                    <p className="font-bold text-slate-100">{plan.name}</p>
+                    <p className="text-xs text-slate-400">{plan.durationMonths} {isMarathi ? "महिने" : "Months"}</p>
+                  </div>
+                  <p className="font-black text-white text-lg">₹{plan.price}</p>
+                </button>
+              ))}
+            </div>
 
-              <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+            {/* User info */}
+            <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
                 <span className="flex items-center gap-1 overflow-hidden max-w-[200px]">
                   <Icons.User className="h-3.5 w-3.5 text-slate-500 shrink-0" />
                   <span className="truncate">{currentUser.email}</span>
                 </span>
                 <span className="font-mono text-[10px] text-slate-500 bg-slate-900 px-2 py-0.5 rounded shrink-0">
-                  ORDER_OMTO_8293
+                  ORDER_OMTO_{selectedPlan?.id}
                 </span>
               </div>
-            </div>
 
             {/* Instruction Banner */}
             <div className="bg-amber-500/5 border border-amber-500/20 p-3 rounded-2xl space-y-1">
