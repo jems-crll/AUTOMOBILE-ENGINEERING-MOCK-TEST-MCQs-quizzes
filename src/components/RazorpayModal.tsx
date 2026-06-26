@@ -379,8 +379,8 @@ export default function RazorpayModal({
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
                 {isMarathi
-                  ? "प्रीमियम फीचर्स वापरण्यासाठी खालील लिंकवर क्लिक करून ₹२९९ पेमेंट पूर्ण करा आणि पेमेंट पूर्ण झाल्यावर तिथे मिळालेला संदर्भ (UPI Ref No/UTR/Txn ID) क्रमांक खाली टाकून पडताळणी करा."
-                  : "To unlock premium features, click the button below to complete your payment of ₹299. After paying, enter your transaction reference number (UPI Ref No/UTR/Txn ID) below to verify."}
+                  ? `प्रीमियम फीचर्स वापरण्यासाठी खालील लिंकवर क्लिक करून ₹${selectedPlan?.price} पेमेंट पूर्ण करा आणि पेमेंट पूर्ण झाल्यावर तिथे मिळालेला संदर्भ (UPI Ref No/UTR/Txn ID) क्रमांक खाली टाकून पडताळणी करा.`
+                  : `To unlock premium features, click the button below to complete your payment of ₹${selectedPlan?.price}. After paying, enter your transaction reference number (UPI Ref No/UTR/Txn ID) below to verify.`}
               </p>
             </div>
 
@@ -395,7 +395,7 @@ export default function RazorpayModal({
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-indigo-500/10"
               >
                 <Icons.ExternalLink className="h-4 w-4" />
-                <span>{isMarathi ? "Razorpay वर ₹२९९ भरा" : "Pay ₹299 on Razorpay"}</span>
+                <span>{isMarathi ? `Razorpay वर ₹${selectedPlan?.price} भरा` : `Pay ₹${selectedPlan?.price} on Razorpay`}</span>
               </button>
               <p className="text-[9.5px] text-slate-500 text-center">
                 {isMarathi 
