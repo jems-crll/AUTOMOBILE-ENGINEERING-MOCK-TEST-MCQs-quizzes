@@ -1,0 +1,8 @@
+{
+  "name": "Automobile Engineering Mock Test",
+  "description": "Bilingual (Marathi \u0026 English) chapter-wise mock test for Automobile Engineering, featuring practice modes, test parameters, score analytics, and AI-powered explanations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
